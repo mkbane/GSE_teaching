@@ -1,6 +1,8 @@
 /*
  * C code to take (time fields, power field) from file ($1) and integrate to obtain energy
  * mkbane, Jan2024
+ *
+ * Correct version (requires no commas). Feb/Mar 2024
  */
 
 #include <stdio.h>
@@ -45,64 +47,46 @@ int main(int argc, char *argv[]) {
       char dateString[11], timeString[timeLen];
       char buf[timeLen-1];
       char startDateString[11];       // save dateString and throw error if changes
-      int timeSecs_0, timeNanosecs_0;
-      int timeSecs_1, timeNanosecs_1;
+      double secsSinceMidnight_0, secsSinceMidnight_1;
       float power_0, power_1;
-      /*
-      // read initial line (header) and discuard
-      fgets(buffer, BUFSIZ-1, filePtr); // read up to EOL
-      printf("HEADER\n%s\n", buffer);
-      */
 
       // get initial data and parse 
       fgets(buffer, BUFSIZ-1, filePtr);
-      printf("%s\n", buffer);
+      printf("%s", buffer);
       int hour, minute;
       float sec;
-      char secString[7];
-      // reads in ss.ddd, as a string
+
       sscanf(buffer, "%s %d:%d:%f %f", &startDateString, &hour, &minute, &sec, &power_0);
-      printf("date: %s\nhour: %d\nminute: %d\nsecond: %f\n", startDateString, hour, minute, sec);
-      /* strncpy(buf, secString, 6); // buf has no trailing comma */
-      /* printf("hour: %d\nminute: %d\nsecond: %s\n", hour, minute, buf); */
-      /* printf("power: %f\n", power_0); */
-      /* float secsSinceMidnight = (float) hour*3600.0 + (float) minute*60.0 + (float) atof(buf); */
-      //      printf("secs since midnight = %f\n", secsSinceMidnight);
-
-      exit;
-
-      /*
-      sscanf(buffer, "%s %s %f", &startDateString, &timeString, &power_0); 
-      printf(" date: %s\n time: '%s'\n power: %f\n", startDateString, timeString, power_0);
-      // convert time to seconds since unix began
-      strncpy(buf, timeString, timeLen-1);
-      printf("'%s'\n", buf);
-      timeSecs_0 = convertTimestring(buf); // NB timeString will have trailing comma so pass without
-      printf("timeSecs=%f\n",timeSecs_0);
-      */
-
+      printf("date: %s\thour: %d\tminute: %d\tsecond: %f\t", startDateString, hour, minute, sec);
+      secsSinceMidnight_0 = (double) hour*3600.0 + (double) minute*60.0 + (double) sec;
+      printf("secs since midnight = %f\n", secsSinceMidnight_0);
+      printf("power=%f W\n", power_0);
       
       // loop whilst more rows
       int numPairs = 0;
       double deltaTime, meanPower, partialEnergy;
       while (fgets(buffer, BUFSIZ-1, filePtr) != NULL) {
 	numPairs++;
-	printf("START: timeSecs=%d, timeNanosecs=%d, power=%d microW\n", timeSecs_0, timeNanosecs_0, power_0);
-	sscanf(buffer, "%d.%d %d", &timeSecs_1, &timeNanosecs_1, &power_1);
-	printf("FINISH: timeSecs=%d, timeNanosecs=%d, power=%d microW\n", timeSecs_1, timeNanosecs_1, power_1);
-	deltaTime = (timeSecs_1 - timeSecs_0) + (double) (timeNanosecs_1 - timeNanosecs_0) * 1.0E-09;
+	printf("START: timeSecs=%f, power=%f W\n", secsSinceMidnight_0, power_0);
+	printf("%s", buffer);
+	sscanf(buffer, "%s %d:%d:%f %f", &startDateString, &hour, &minute, &sec, &power_1);
+	printf("date: %s\thour: %d\tminute: %d\tsecond: %f\t", startDateString, hour, minute, sec);
+	secsSinceMidnight_1 = (double) hour*3600.0 + (double) minute*60.0 + (double) sec;
+	printf("secs since midnight = %f\n", secsSinceMidnight_1);
+	printf("power=%f W\n", power_1);
+	printf("FINISH: timeSecs=%f, power=%f W\n", secsSinceMidnight_1, power_1);
+	deltaTime = (secsSinceMidnight_1 - secsSinceMidnight_0);
 	meanPower = 0.5d * (double) (power_1 + power_0);
 	partialEnergy = deltaTime * meanPower;
-	printf("Delta time=%f, mean power=%f microWatts ==> partial energy=%f microJoules\n", \
+	printf("Delta time=%f, mean power=%f Watts ==> partial energy: %f Joules\n", \
 	       deltaTime, meanPower, partialEnergy);
 	totalEnergy += partialEnergy;
-	printf("Total energy so far: %f\n", totalEnergy);
+	printf("Total energy so far: %f Joules\n---\n", totalEnergy);
 	// now set RHS to be LHS for any next step
-	timeSecs_0 = timeSecs_1;
-	timeNanosecs_0 = timeNanosecs_1;
+	secsSinceMidnight_0 = secsSinceMidnight_1;
 	power_0 = power_1;
       } // while
-      printf("Read %d pairs of points.\nTotal energy = %f microJoules\n", numPairs, totalEnergy);
+      printf("Read %d pairs of points.\nTotal energy = %f Joules\n", numPairs, totalEnergy);
     }
   }
 }
